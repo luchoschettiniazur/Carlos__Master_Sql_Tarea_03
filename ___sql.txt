@@ -20,7 +20,7 @@
 --drop table Usuario;
 --drop table   Ciudad;
 --drop table   Pais;
---drop procedure DireccionUsuariosDeterminadosAnios
+--drop procedure spDirUsuariosPorAnioCreacion
 
 
 
@@ -43,7 +43,7 @@
 
 
 
-OJO A PARTIR DE AQUI SE PUEDE CORRER TODO EL SQL DE SOLA VEZ:------------------------>
+--OJO A PARTIR DE AQUI SE PUEDE CORRER TODO EL SQL DE SOLA VEZ:------------------------>
 
 
 
@@ -304,7 +304,7 @@ go
 
 
 
-//consultas de acumulados:  para tarea 03
+--consultas de acumulados:  para tarea 03
 --**************************************************************************
 --Count
 select p.Nombre as Pais, Count(*) as TotalUsuariosPorPais
