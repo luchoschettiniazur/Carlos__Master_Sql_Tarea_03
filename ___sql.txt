@@ -1,0 +1,337 @@
+
+--Relaciones QUE VAMOS A CREAR
+--de 1 a 1
+--de 1 a muchos
+--de muchos a muchos
+
+
+-Tablas que creo
+--***********************
+--Pais   -  ciudad
+--Usuario     -    UsuarioExtras	    
+--UserioRol
+--Rol
+
+
+-- --PARA BORRAR TODAS LAS TABLAS CREADAS Y PROC:
+--drop table UsuarioRol;
+--drop table Rol;
+--drop table UsuarioExtra;
+--drop table Usuario;
+--drop table   Ciudad;
+--drop table   Pais;
+--drop procedure DireccionUsuariosDeterminadosAnios
+
+
+
+
+
+
+
+--Utilizar la bd master:  (tiene que ser primero que todo (por separado)  para que no de error)
+--***************************************************************************
+  --use master;
+ 
+
+--creo bd:
+--***************************************************************************
+
+  --create database LibrosBD_Tarea_03;
+  --go
+  --use LibrosBD_Tarea_03;
+
+
+
+
+OJO A PARTIR DE AQUI SE PUEDE CORRER TODO EL SQL DE SOLA VEZ:------------------------>
+
+
+
+--Creo tabla   Pais   y   Ciudad (de 1 a muchos) 
+--**************************************************************************
+
+CREATE TABLE Pais(
+PaisId int NOT NULL IDENTITY,
+Nombre nvarchar(150) NOT NULL,
+FechaCreacion datetime2 NOT NULL,
+);
+go
+
+ALTER TABLE Pais
+ADD CONSTRAINT Pk_PaisId   PRIMARY KEY (PaisId);
+go
+
+
+
+CREATE TABLE Ciudad(
+CiudadId int NOT NULL IDENTITY,
+Nombre nvarchar(150) NOT NULL,
+FechaCreacion datetime2 NOT NULL,
+PaisId int NOT NULL
+);
+go
+
+ALTER TABLE Ciudad
+ADD CONSTRAINT Pk_Ciudad PRIMARY KEY (CiudadId);
+go
+ALTER TABLE Ciudad
+ADD CONSTRAINT FK_Ciudad_Pais_PaisId FOREIGN KEY (PaisId)
+REFERENCES Pais(PaisId) ON DELETE CASCADE; --ON DELETE CASCADE --ON DELETE SET NULL  --ON DELETE NO ACTION
+go
+
+
+
+
+--Creo tabla Usuario y Usuarioextra con relacion de 1 a 1
+--**************************************************************************
+
+CREATE TABLE Usuario(
+UsuarioId int NOT NULL IDENTITY,
+Nombre nvarchar(50) NOT NULL,
+Apellido nvarchar(50) NOT NULL,
+Email nvarchar(50) NOT NULL,
+Password nvarchar(50) NOT NULL,
+FechaCreacion datetime2 NOT NULL,
+);
+go
+
+ALTER TABLE Usuario
+ADD CONSTRAINT Pk_Usuario PRIMARY KEY (UsuarioId);
+go
+
+
+
+CREATE TABLE UsuarioExtra(
+UsuarioExtraId int NOT NULL IDENTITY,
+UsuarioId int NOT NULL,
+Dni nvarchar(20) NOT NULL,
+Calle nvarchar(150) NOT NULL,
+CodigoPostal nvarchar(20) NOT NULL,
+CiudadId int NOT NULL,
+FechaCreacion datetime2 NOT NULL,
+PuntosAcumulados int NOT NULL
+);
+go
+
+ALTER TABLE UsuarioExtra
+ADD CONSTRAINT Pk_UsuarioExtraId  PRIMARY KEY (UsuarioExtraId );
+go
+--Esto es lo que hace que sea una relacion de 1 a 1:
+--Si no creo este Unique Constraint seria una relacion de 1 a muchos (muchos por la otra parte)
+alter table UsuarioExtra
+add constraint UC_UsuarioExtra_UsuarioId Unique(UsuarioId);
+go
+ALTER TABLE UsuarioExtra
+ADD CONSTRAINT FK_UsuarioExtra_Usuario_UsuarioId FOREIGN KEY (UsuarioId)
+REFERENCES Usuario (UsuarioId) ON DELETE CASCADE; --ON DELETE SET NULL  --ON DELETE NO ACTION
+go
+ALTER TABLE UsuarioExtra
+ADD CONSTRAINT FK_UsuarioExtra_Ciudad_CiudadId FOREIGN KEY (CiudadId)
+REFERENCES Ciudad (CiudadId) ON DELETE CASCADE; --ON DELETE SET NULL  --ON DELETE NO ACTION
+go
+
+
+
+
+
+
+--Creo tabla Rol y UsuarioRol (muchos a muchos) -> Usuario - Rol con tabla itermedia UsuarioRol
+--**************************************************************************
+
+
+CREATE TABLE Rol(
+RolId int NOT NULL IDENTITY,
+Nombre nvarchar(150) NOT NULL,
+Descripcion nvarchar(500) NULL,
+FechaCreacion datetime2 NOT NULL,
+);
+go
+
+ALTER TABLE Rol
+ADD CONSTRAINT Pk_Rol PRIMARY KEY (RolId);
+go
+
+
+
+
+CREATE TABLE UsuarioRol(
+ UsuarioRolId int NOT NULL IDENTITY,
+ UsuarioId int NOT NULL,
+ RolId int NOT NULL,
+);
+go
+
+ALTER TABLE UsuarioRol
+ADD CONSTRAINT Pk_UsuarioRol PRIMARY KEY(UsuarioRolId)
+go
+ALTER TABLE UsuarioRol
+ADD CONSTRAINT UC_UserioRol_UsuarioId_RolId UNIQUE (UsuarioId,RolId);
+go
+ALTER TABLE UsuarioRol
+ADD CONSTRAINT Fk_UsuarioRol_Usuario_UsuarioId FOREIGN KEY (UsuarioId)
+REFERENCES Usuario (UsuarioId) ON DELETE CASCADE;
+go
+ALTER TABLE UsuarioRol
+ADD CONSTRAINT FK_UsuarioRol_Rol_RolId FOREIGN KEY (RolId)
+REFERENCES Rol (RolId) ON DELETE CASCADE;
+go
+
+
+
+--Crear procedure crear en bbdd
+--**************************************************************************
+CREATE PROCEDURE spDirUsuariosPorAnioCreacion
+	@anioInicio int,
+	@anioFin int
+AS
+select u.FechaCreacion, u.UsuarioId, u.Nombre, u.Apellido, ux.Calle, ux.CodigoPostal, c.Nombre as Ciudad, p.Nombre as Pais
+from Usuario as u
+join UsuarioExtra as ux on u.UsuarioId = ux.UsuarioId
+join Ciudad as c on  ux.CiudadId = c.CiudadId 
+join Pais as p on c.PaisId = p.PaisId
+where year(u.FechaCreacion) >= @anioInicio and year(u.FechaCreacion) <= @aniofin
+order by u.FechaCreacion
+go
+
+
+
+
+
+
+--AHORA VAMOS A AÑADIR REGISTROS  (LO VOY HACER PRIMERO EN BBDD) Y LUEGO LO PEGO AQUI 
+--**************************************************************************
+
+--pais
+INSERT INTO [Pais](Nombre,FechaCreacion) VALUES
+('Pais 1','2023-01-21'),
+('Pais 2','2023-01-22'),
+('Pais 3','2023-01-23'),
+('Pais 4','2023-01-24'),
+('Pais 5','2023-01-25')
+go
+
+--ciudad
+INSERT INTO [Ciudad](Nombre,FechaCreacion,PaisId ) VALUES
+('Ciudad 1','2023-01-21',1),
+('Ciudad 2','2023-01-22',1),
+('Ciudad 3','2023-01-23',1),
+('Ciudad 4','2023-01-24',2),
+('Ciudad 5','2023-01-25',2),
+('Ciudad 6','2023-01-21',2),
+('Ciudad 7','2023-01-22',3),
+('Ciudad 8','2023-01-23',3),
+('Ciudad 9','2023-01-24',4),
+('Ciudad 10','2023-01-25',4),
+('Ciudad 11','2023-01-23',5),
+('Ciudad 12','2023-01-24',5),
+('Ciudad 13','2023-01-25',5)
+
+
+
+--Usuario
+INSERT INTO [Usuario]([Nombre],[Apellido],[Email],[Password],[FechaCreacion]) VALUES
+('Luis 1','Olazabal 1','Olazabal1@yopmail.com','123456','2021-01-21'),
+('Luis 2','Olazabal 2','Olazabal2@yopmail.com','123456','2021-01-22'),
+('Luis 3','Olazabal 3','Olazabal3@yopmail.com','123456','2022-01-25'),
+('Luis 4','Olazabal 4','Olazabal4@yopmail.com','123456','2022-01-25'),
+('Luis 5','Olazabal 5','Olazabal5@yopmail.com','123456','2022-01-25'),
+('Luis 6','Olazabal 6','Olazabal6@yopmail.com','123456','2023-01-26'),
+('Luis 7','Olazabal 7','Olazabal7@yopmail.com','123456','2023-01-26'),
+('Luis 8','Olazabal 8','Olazabal8@yopmail.com','123456','2023-01-26'),
+('Luis 9','Olazabal 9','Olazabal9@yopmail.com','123456','2024-01-26')
+
+
+--UsuarioExtra
+INSERT INTO [UsuarioExtra]([UsuarioId],[Dni],[Calle],[CodigoPostal],[CiudadId],[FechaCreacion],[PuntosAcumulados])VALUES
+(1,'x1234561','Calle 1','25037',1,'2023-01-21', 1),
+(2,'x1234561','Calle 2','25037',2,'2023-01-22', 2),
+(3,'x1234561','Calle 3','25037',3,'2023-01-23', 3),
+(4,'x1234561','Calle 4','25037',4,'2023-01-24', 4),
+(5,'x1234561','Calle 5','25037',5,'2023-01-25', 5),
+(6,'x1234561','Calle 6','25037',6,'2023-01-26', 6),
+(7,'x1234561','Calle 7','25037',7,'2023-01-27', 7),
+(8,'x1234561','Calle 8','25037',8,'2023-01-28', 8),
+(9,'x1234561','Calle 9','25037',9,'2023-01-29', 9)
+
+
+--Rol
+INSERT INTO [Rol]([Nombre],[Descripcion],[FechaCreacion]) VALUES
+('Rol1','es el Rol 1','2023-01-21'),
+('Rol2','es el Rol 2','2023-01-22'),
+('Rol3','es el Rol 3','2023-01-23'),
+('Rol4','es el Rol 4','2023-01-23')
+
+
+--UsuarioRol
+INSERT INTO [UsuarioRol]([UsuarioId],[RolId]) VALUES
+(1,1),
+(2,2),
+(3,3),
+(4,4),
+(5,1),
+(6,2),
+(7,3),
+(8,4),
+(9,1),
+(1,2),
+(1,3),
+(1,4),
+(2,3),
+(2,4)
+
+
+
+
+--Comprobar datos insertados:
+--**************************************************************************
+select * from pais;
+select * from ciudad;
+
+select * from usuario;
+select * from UsuarioExtra;
+
+select * from rol;
+select * from UsuarioRol;
+
+
+--probar procedur
+--**************************************************************************
+execute spDirUsuariosPorAnioCreacion 2022, 2023
+go
+
+
+
+
+
+
+//consultas de acumulados:  para tarea 03
+--**************************************************************************
+--Count
+select p.Nombre as Pais, Count(*) as TotalUsuariosPorPais
+from Usuario as u
+join UsuarioExtra as ux on u.UsuarioId = ux.UsuarioId
+join Ciudad as c on  ux.CiudadId = c.CiudadId 
+join Pais as p on c.PaisId = p.PaisId
+where year(u.FechaCreacion) >= 2021 and year(u.FechaCreacion) <= 2023
+group by p.Nombre
+
+--Min
+select u.FechaCreacion as FechaCreacionUsuario, Min(ux.PuntosAcumulados) as PuntosMinimosPorFechaCreacion
+from Usuario as u
+join UsuarioExtra as ux on u.UsuarioId = ux.UsuarioId
+where year(u.FechaCreacion) >= 2022 and year(u.FechaCreacion) <= 2023
+group by u.FechaCreacion
+
+--Max
+select u.FechaCreacion as FechaCreacionUsuario, Max(ux.PuntosAcumulados) as PuntosMaximoPorFechaCreacion
+from Usuario as u
+join UsuarioExtra as ux on u.UsuarioId = ux.UsuarioId
+where year(u.FechaCreacion) >= 2022 and year(u.FechaCreacion) <= 2023
+group by u.FechaCreacion
+--Avg
+select u.FechaCreacion as FechaCreacionUsuario, AVG(ux.PuntosAcumulados) as PuntosMediosPorFechaCreacion
+from Usuario as u
+join UsuarioExtra as ux on u.UsuarioId = ux.UsuarioId
+where year(u.FechaCreacion) >= 2022 and year(u.FechaCreacion) <= 2023
+group by u.FechaCreacion
+
